@@ -1,59 +1,64 @@
-/*
-  Caixa preta.
-*/
+#define X_AXIS 1
+#define Y_AXIS 2
+#define Z_AXIS 3
 
-//Define em que portas devem ficar os leds
-#define BLINK     2
-#define NOT_BLINK 3
-#define ALWAYS_ON 4
-#define FADE      5
+void setupBluetooth() {
+}
 
-//Prepara para piscar os leds
+void setupBluetooth() {
+}
+
 void setup() {
-  pinMode(BLINK, OUTPUT);
-  pinMode(NOT_BLINK, OUTPUT);
-  pinMode(ALWAYS_ON, OUTPUT);
-
-  //sem pinMode para o FADE pois ele e analogico
-
-  digitalWrite(ALWAYS_ON, HIGH);
+  setupBluetooth();
+  setupGps();
 }
 
-
-
-boolean on = true; //diz se o piscador deve ou nao estar aceso
-int intensity_increment = 5; //passo de incremento do led esmaecedor
-int intensity = 0; //intensidade atual do esmaecedor
-
-/*
-Faz com que os piscadores pisquem...
-Quando um estiver apagado, o outro deve estar aceso
-*/
-void doBlink() {
-  if (on) {
-    digitalWrite(BLINK, HIGH);
-    digitalWrite(NOT_BLINK, LOW);
-  } else {
-    digitalWrite(BLINK, LOW);
-    digitalWrite(NOT_BLINK, HIGH);
-  }
-
-  on = !on;
+//retorna a velocidade em m/s
+int getVelocity() {
+  return 0;
 }
 
-/* Apaga e acende gradualmente um led */
-void doFade() {
-  intensity += intensity_increment;
-  if (intensity >= 255 || intensity <= 0) {
-     intensity_increment = -intensity_increment;
-  }
+//retorna a aceleraço em m/(s*s)
+int getAcceleration(int axis) {
+  return 0;
+}
 
-  analogWrite(FADE, intensity);
+String getGps() {
+  return null;
+}
+
+void sendVelocity(in velocity) {
+}
+
+void sendAcceleration(int acceleration, int axis) {
+}
+
+void sendGps(String gps) {
 }
 
 void loop() {
-  doBlink();
-  doFade();
-  delay(150);
+  int velocity = getVelocity();
+
+  int accel_x = getAcceleration(X_AXIS);
+  int accel_y = getAcceleration(Y_AXIS);
+  int accel_z = getAcceleration(Z_AXIS);
+
+  String gps = getGps();
+
+  sendSpeed(velocity);
+
+  sendAcceleration(accel_x, X_AXIS);
+  sendAcceleration(accel_y, Y_AXIS);
+  sendAcceleration(accel_z, Z_AXIS);
+
+  sendGps(gps);
+
+  delay(500); //aguarda meio segundo para enviar mais dados
+
+  /*
+  O que fazer se a conexao do bluetooth falhar? Tenho
+  como controlar isso de modo a fazer o sistema voltar
+  para um estado conectado?
+  */
 }
 
