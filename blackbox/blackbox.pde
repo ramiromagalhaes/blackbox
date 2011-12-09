@@ -15,6 +15,11 @@ Pino analogico usado pelo sensor de velocidade (distancia).
 #define BLUETOOTH_BAUD 115200 //taxa de transmissao do dispositivo bluetooth.
 
 
+
+//variaveis que serao usadas com o getVelocity
+int distanciaAnterior = 0; 
+int tempo = 1/2; // segundos
+
 /*
 'samplingRatePerSecond' armazena a quantidade de vezes por segundo com que os
 dados serao amostrados. Coloquei isso numa variavel caso resolvamos permitir
@@ -93,15 +98,20 @@ void setupTimer() {
 
 //retorna a velocidade em m/s
 int getVelocity() {
-  /*
-  essa e uma implementacao "mock" do sensor de velocidade. Sabendo que o
-  sensor trabalha com uma saida analogica, usei um potenciometro para simular
-  o comportamento do sensor.
+  //Sensor LV-MaxSonar®-EZ0: detecta de 0 a 254 polegadas (de 0 a 6.45-metros)
+  //analogRead() command converts the input voltage range, 0 to 5 volts, to a digital value between 0 and 1023
+  //valor analógico do sensor = (analogRead() * 2.5) / 512
+  int valorAnalogico = (analogRead(PIN_VEL) * 2.5)/512;
 
-  Note que nao fiz nenhuma conta para aplicar doppler sobre os dados lidos.
-  */
-  int sensed = analogRead(PIN_VEL);
-  return sensed;
+  //Vcc = voltagem de alimentação do sensor (5volts)
+  //Distancia do sensor (em polegadas) = valor analógico do sensor / (Vcc/512)
+  //Distancia em metros = distancia do sensor * 0,0254
+  int distanciaAtual = ((valorAnalogico / (5/512)) * 0.0254);
+
+  //Velocidade (metro/segundo)= distancia atual - distancia anterior / 2;  
+  int velocidade = (distanciaAtual - distanciaAnterior) / tempo;
+
+  distanciaAnterior = distanciaAtual;
 }
 
 /*
