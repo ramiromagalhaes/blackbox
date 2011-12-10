@@ -182,7 +182,7 @@ void sendAcceleration(int acceleration, int axis) {
 Envia as informacoes fornecidas pelo GPS.
 */
 void sendGps(String gps) {
-  Serial.print(gps);
+  Serial.println(gps);
 }
 
 /*
