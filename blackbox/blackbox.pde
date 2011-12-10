@@ -104,20 +104,33 @@ int getVelocity() {
   return sensed;
 }
 
+/*
+Converte o dado enviado pelo acelerometro em uma aceleracao em metros por segundo.
+Como o retorno e do tipo inteiro, estamos ignorando a parte fracionaria da aceleracao.
+*/
+int convertAcceleration(int sensorData) {
+  /*
+  Para entender a equaçao a seguir, consulte:
+
+  http://www.parallax.com/dl/docs/prod/acc/memsickit.pdf
+  http://arduino.cc/en/Tutorial/Memsic2125?from=Tutorial.Accelerometer
+  */
+  const int milliGravs = ((sensorData / 10) - 500) * 8;
+
+  return milliGravs/100; //converte milligravs em m/s*s
+}
+
 //retorna a aceleracao em m/(s*s)
 int getAcceleration(int axis) {
-  //convert the pulse width into acceleration
-  //accelerationX and accelerationY are in milli-g's: 
-  //earth's gravity is 1000 milli-g's, or 1g.
-  //Fonte: http://arduino.cc/en/Tutorial/Memsic2125?from=Tutorial.AccelerometerMemsic2125
+  int data = 0;
 
   if (axis == X_AXIS) {
-    return ((pulseIn(PIN_X, HIGH) / 10) - 500) * 8;
+    data = pulseIn(PIN_X, HIGH);
   } else if (axis == Y_AXIS) {
-    return ((pulseIn(PIN_Y, HIGH) / 10) - 500) * 8;
-  }
+    data = pulseIn(PIN_Y, HIGH);
+  } //sem o pino da dimensao Z...
 
-  return 0;
+  return convertAcceleration(data);
 }
 
 String getGps() {
