@@ -168,8 +168,8 @@ enviado, conforme definido por X_AXIS, Y_AXIS e Z_AXIS.
 */
 void sendAcceleration(int acceleration, int axis) {
   if (debug) {
-    Serial.print( axis, DEC );
-    Serial.print( ":" );
+   // Serial.print( axis, DEC );
+   // Serial.print( ":" );
     Serial.println( acceleration, DEC );
   } else {
     Serial.write( highByte(acceleration) );
