@@ -1,3 +1,5 @@
+#include <SoftwareSerial.h>
+
 #define X_AXIS 1 //identificador do eixo X do acelerometro
 #define Y_AXIS 2 //identificador do eixo Y do acelerometro
 #define Z_AXIS 3 //identificador do eixo Z do acelerometro
@@ -10,10 +12,13 @@ Pino analogico usado pelo sensor de velocidade (distancia).
 */
 #define PIN_VEL A0
 
+#define PIN_GPS_IN 8
+#define PIN_GPS_OUT 9
+
 #define BLINKER 13 //pino da luz que pisca pra dizer que esta tudo operacional
 
 #define BLUETOOTH_BAUD 115200 //taxa de transmissao do dispositivo bluetooth.
-
+#define GPS_BAUD 4800
 
 /*
 'samplingRatePerSecond' armazena a quantidade de vezes por segundo com que os
@@ -23,24 +28,11 @@ a mudanca dessa taxa a partir do dispositivo de captura.
 int samplingRatePerSecond = 2;
 
 
-//controla a presenca de conexao com um dispositivo USB.
-boolean isConnected = false;
 
 //flag para controlar como os dados serao exibidos: em modo de depuracao ou nao.
 const boolean debug = true;
 
-/*
-Espera a resposta do dispositivo responsavel pelo envio de dados sobre os
-sensores. quando houver dados, retorna a quantidade de bytes disponivel.
-*/
-byte communicationWaitForData() {
-  byte dataAvailable = 0;
-  while((dataAvailable = Serial.available()) <= 0) {
-    delay(100);
-  }
-
-  return dataAvailable;
-}
+SoftwareSerial gpsSerial(PIN_GPS_IN, PIN_GPS_OUT);
 
 /*
 Inicia a comunicacao serial com o fluxo (stream) que recebera as informacoes
@@ -61,11 +53,11 @@ void setupCommunication() {
   byte dataAvailable = 0;
 
   Serial.begin(BLUETOOTH_BAUD);
-
-  isConnected = true;
 }
 
+
 void setupGps() {
+  gpsSerial.begin(GPS_BAUD);
 }
 
 /*
@@ -78,7 +70,7 @@ void setupAccelerometer() {
   pinMode(PIN_Y, INPUT);
 }
 
-void setupSpeedometer() {
+void setupDistanceSensor() {
 }
 
 void setupBlinker() {
@@ -91,17 +83,22 @@ Configuracao necessaria para pegarmos os dados do relogio do arduino.
 void setupTimer() {
 }
 
-//retorna a velocidade em m/s
-int getVelocity() {
-  /*
-  essa e uma implementacao "mock" do sensor de velocidade. Sabendo que o
-  sensor trabalha com uma saida analogica, usei um potenciometro para simular
-  o comportamento do sensor.
+/*
+Calcula a distancia em milimetros, conforme percebida pelo sensor de distancia.
 
-  Note que nao fiz nenhuma conta para aplicar doppler sobre os dados lidos.
-  */
-  int sensed = analogRead(PIN_VEL);
-  return sensed;
+NOTA IMPORTANTE: nao pudemos usar o sensor de distancia, portanto optamos por
+simula-lo com um potenciometro. Isso nos obrigou a fazer algumas adaptacoes no
+calculo da distancia, conforme descrito a seguir.
+
+O sensor tem sensibilidade para detectar 256 unidades de distancia. Acontece
+que o Arduino consegue absorver 1024 niveis diferentes de voltagem, portanto e
+necessario dividir pela metade o resultado de analogRead(PIN_VEL) para termos a
+distancia verdadeira. Essas unidades de distancia sao enviadas como polegadas.
+Assim, e necessario converte-las.
+*/
+int getDistance() {
+  const float ajustes = 25.4/4.0;
+  return analogRead(PIN_VEL) * ajustes;
 }
 
 /*
@@ -133,8 +130,21 @@ int getAcceleration(int axis) {
   return convertAcceleration(data);
 }
 
-String getGps() {
-  return "";
+char* getGps() {
+  char buffer[68] = {0};
+
+  int charsAvalilable = gpsSerial.available();
+
+  int i = 0;
+  for (; i < charsAvalilable; i++) {
+    char theChar = gpsSerial.read();
+    //Serial.print(theChar);
+    buffer[i] = theChar;
+  }
+
+  buffer[i+1] = 0;
+
+  return buffer;
 }
 
 /*
@@ -147,10 +157,10 @@ long getTimestamp() {
 }
 
 /*
-Envia a velocidade atual, em m/s. Tal informacao ocupa 2 bytes, sendo
+Envia a distancia, em metros. Tal informacao ocupa 2 bytes, sendo
 o primeiro o mais alto e o segundo o mais baixo.
 */
-void sendVelocity(int velocity) {
+void sendDistance(int velocity) {
   if (debug) {
     Serial.println( velocity );
   } else {
@@ -168,8 +178,8 @@ enviado, conforme definido por X_AXIS, Y_AXIS e Z_AXIS.
 */
 void sendAcceleration(int acceleration, int axis) {
   if (debug) {
-    Serial.print( axis, DEC );
-    Serial.print( ":" );
+   // Serial.print( axis, DEC );
+   // Serial.print( ":" );
     Serial.println( acceleration, DEC );
   } else {
     Serial.write( highByte(acceleration) );
@@ -181,8 +191,8 @@ void sendAcceleration(int acceleration, int axis) {
 /*
 Envia as informacoes fornecidas pelo GPS.
 */
-void sendGps(String gps) {
-  Serial.print(gps);
+void sendGps(char* gps) {
+  Serial.println(gps);
 }
 
 /*
@@ -219,30 +229,25 @@ void setup() {
   setupCommunication();
   setupGps();
   setupAccelerometer();
-  setupSpeedometer();
+  setupDistanceSensor();
   setupBlinker();
   setupTimer();
 }
 
 void loop() {
-  if ( !isConnected ) {
-    //TODO tenta reconectar
-    return;
-  }
-
   //primeiro, pegamos os dados...
-  int velocity = getVelocity();
+  int velocity = getDistance();
 
   int accel_x = getAcceleration(X_AXIS);
   int accel_y = getAcceleration(Y_AXIS);
   int accel_z = getAcceleration(Z_AXIS);
 
-  String gps = getGps();
+  char* gps = getGps();
 
   long timestamp = getTimestamp();
 
   //depois, enviamos os dados...
-  sendVelocity(velocity);
+  sendDistance(velocity);
 
   sendAcceleration(accel_x, X_AXIS);
   sendAcceleration(accel_y, Y_AXIS);
