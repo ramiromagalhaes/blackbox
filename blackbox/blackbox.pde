@@ -1,3 +1,5 @@
+#include <SoftwareSerial.h>
+
 #define X_AXIS 1 //identificador do eixo X do acelerometro
 #define Y_AXIS 2 //identificador do eixo Y do acelerometro
 #define Z_AXIS 3 //identificador do eixo Z do acelerometro
@@ -10,10 +12,13 @@ Pino analogico usado pelo sensor de velocidade (distancia).
 */
 #define PIN_VEL A0
 
+#define PIN_GPS_IN 8
+#define PIN_GPS_OUT 9
+
 #define BLINKER 13 //pino da luz que pisca pra dizer que esta tudo operacional
 
 #define BLUETOOTH_BAUD 115200 //taxa de transmissao do dispositivo bluetooth.
-
+#define GPS_BAUD 4800
 
 /*
 'samplingRatePerSecond' armazena a quantidade de vezes por segundo com que os
@@ -23,8 +28,11 @@ a mudanca dessa taxa a partir do dispositivo de captura.
 int samplingRatePerSecond = 2;
 
 
+
 //flag para controlar como os dados serao exibidos: em modo de depuracao ou nao.
 const boolean debug = true;
+
+SoftwareSerial gpsSerial(PIN_GPS_IN, PIN_GPS_OUT);
 
 /*
 Inicia a comunicacao serial com o fluxo (stream) que recebera as informacoes
@@ -47,7 +55,9 @@ void setupCommunication() {
   Serial.begin(BLUETOOTH_BAUD);
 }
 
+
 void setupGps() {
+  gpsSerial.begin(GPS_BAUD);
 }
 
 /*
@@ -120,8 +130,21 @@ int getAcceleration(int axis) {
   return convertAcceleration(data);
 }
 
-String getGps() {
-  return "";
+char* getGps() {
+  char buffer[68] = {0};
+
+  int charsAvalilable = gpsSerial.available();
+
+  int i = 0;
+  for (; i < charsAvalilable; i++) {
+    char theChar = gpsSerial.read();
+    //Serial.print(theChar);
+    buffer[i] = theChar;
+  }
+
+  buffer[i+1] = 0;
+
+  return buffer;
 }
 
 /*
@@ -168,7 +191,7 @@ void sendAcceleration(int acceleration, int axis) {
 /*
 Envia as informacoes fornecidas pelo GPS.
 */
-void sendGps(String gps) {
+void sendGps(char* gps) {
   Serial.println(gps);
 }
 
@@ -219,7 +242,7 @@ void loop() {
   int accel_y = getAcceleration(Y_AXIS);
   int accel_z = getAcceleration(Z_AXIS);
 
-  String gps = getGps();
+  char* gps = getGps();
 
   long timestamp = getTimestamp();
 
