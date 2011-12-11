@@ -14,15 +14,16 @@ public final class R {
         public static final int ic_launcher=0x7f020000;
     }
     public static final class id {
-        public static final int grafico=0x7f050002;
         public static final int mainL=0x7f050000;
         public static final int resultLL=0x7f050001;
+        public static final int resultTable=0x7f050002;
         public static final int runningLL=0x7f050003;
     }
     public static final class layout {
         public static final int main=0x7f030000;
         public static final int result=0x7f030001;
         public static final int running=0x7f030002;
+        public static final int testeborda=0x7f030003;
     }
     public static final class string {
         public static final int app_name=0x7f040001;

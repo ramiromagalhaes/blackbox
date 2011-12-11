@@ -17,7 +17,7 @@ public class ParameterHandler {
 		//Conecta ao socket
 		socket.connect();
 		//Instancia as classes que vão gravar os dados e chama o reset para apagar dados antigos que estejam gravados
-		VelocityHandler vH = VelocityHandler.getInstance();
+		DistanceHandler vH = DistanceHandler.getInstance();
 		vH.reset();
 		AccelerationHandler aH = AccelerationHandler.getInstance();
 		aH.reset();
@@ -66,12 +66,29 @@ public class ParameterHandler {
 			
 			Long timestamp =Long.parseLong(timestampStr);
 			
-			vH.handleVelocity(timestamp,Double.parseDouble(vel));
+			vH.handleDistance(timestamp,Double.parseDouble(vel));
 			aH.handleAcceleration(timestamp,parseAcceleration(acX),parseAcceleration(acY),parseAcceleration(acZ));
 			gpsH.handleCoordinates(timestamp,gps);
 			
 		}
 		socket.close();
+		RUNNING=false;
+	}
+	public void receiveParametersTestMode() {
+		RUNNING=true;
+		DistanceHandler vH = DistanceHandler.getInstance();
+		vH.reset();
+		AccelerationHandler aH = AccelerationHandler.getInstance();
+		aH.reset();
+		GPSHandler gpsH = GPSHandler.getInstance();
+		gpsH.reset();
+		for(int i=0;i<10;i++){
+			Long timestamp =System.currentTimeMillis();
+			
+			vH.handleDistance(timestamp,Math.random()*100);
+			aH.handleAcceleration(timestamp,Math.random()*1000,Math.random()*1000,Math.random()*1000);
+			gpsH.handleCoordinates(timestamp,Math.random()+"");
+		}
 		RUNNING=false;
 	}
 	private double parseAcceleration(String acc){
