@@ -87,7 +87,7 @@ public class ParameterHandler {
 			
 			vH.handleDistance(timestamp,Math.random()*100);
 			aH.handleAcceleration(timestamp,Math.random()*1000,Math.random()*1000,Math.random()*1000);
-			gpsH.handleCoordinates(timestamp,Math.random()+"");
+			gpsH.handleCoordinates(timestamp,"$GPRMC,081836,A,3804.05,S,0908.36,E,000.0,360.0,130998,011.3,E*62");
 		}
 		RUNNING=false;
 	}
