@@ -15,7 +15,7 @@
    version="1.1"
    inkscape:version="0.48.1 r9760"
    sodipodi:docname="velocimetro.svg"
-   inkscape:export-filename="/home/ramiro/Desktop/velocimetro2.png"
+   inkscape:export-filename="/home/ramiro/workspace/blackbox/velocimetro2.png"
    inkscape:export-xdpi="90"
    inkscape:export-ydpi="90">
   <defs
@@ -85,17 +85,17 @@
      inkscape:pageopacity="1"
      inkscape:pageshadow="2"
      inkscape:zoom="0.7"
-     inkscape:cx="85.429425"
+     inkscape:cx="88.286568"
      inkscape:cy="414.82907"
      inkscape:document-units="px"
-     inkscape:current-layer="g6035-6"
+     inkscape:current-layer="g6035-7"
      showgrid="false"
      showguides="true"
      inkscape:guide-bbox="true"
      inkscape:window-width="1680"
-     inkscape:window-height="965"
+     inkscape:window-height="992"
      inkscape:window-x="0"
-     inkscape:window-y="32"
+     inkscape:window-y="26"
      inkscape:window-maximized="1"
      fit-margin-top="0"
      fit-margin-left="0"
@@ -109,7 +109,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title />
+        <dc:title></dc:title>
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -487,14 +487,14 @@
         <text
            xml:space="preserve"
            style="font-size:79.06804657px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
-           x="236.16946"
+           x="288.16946"
            y="292.95438"
            id="text3761-9"
            sodipodi:linespacing="125%"><tspan
              sodipodi:role="line"
              id="tspan3763-8"
-             x="236.16946"
-             y="292.95438">d/2</tspan></text>
+             x="288.16946"
+             y="292.95438">d</tspan></text>
       </g>
     </g>
     <g
