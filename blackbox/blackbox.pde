@@ -157,7 +157,7 @@ int getSpeed() {
   const int currentDistance = readDistance();
   const long totalTime = millis() - startTime; //TODO: falta subtrair os atrasos do hardware informados pelo fabricante
 
-  return sqrt( 4.0 * pow(currentDistance, 2.0) - pow(sonarHeight, 2.0) ) / totalTime; //note as unidades: estamos fazendo
+  return 2.0 * sqrt( pow(currentDistance, 2.0) - pow(sonarHeight, 2.0) ) / totalTime; //note as unidades: estamos fazendo
                                                                                       //milimetros/milissegundos, portanto
                                                                                       //temos o mesmo que metros/segundo
 }
