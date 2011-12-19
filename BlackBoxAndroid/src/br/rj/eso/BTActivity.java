@@ -3,7 +3,6 @@ package br.rj.eso;
 import java.util.LinkedList;
 import java.util.Set;
 
-import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.Intent;
@@ -22,11 +21,17 @@ import br.rj.eso.control.DistanceHandler;
 import br.rj.eso.control.GPSHandler;
 import br.rj.eso.control.ParameterHandler;
 import br.rj.eso.listener.BTConClickListener;
+import br.rj.eso.listener.CoordOnClickListener;
 import br.rj.eso.util.Util;
 
+import com.google.android.maps.GeoPoint;
+import com.google.android.maps.MapActivity;
+import com.google.android.maps.MapView;
 
 
-public class BTActivity extends Activity {
+
+
+public class BTActivity extends MapActivity {
 	private static final int REQUEST_ENABLE_BT = 2;
 	public ConnectionThread connected;
     /** Called when the activity is first created. */
@@ -116,31 +121,37 @@ public class BTActivity extends Activity {
     	tvTime.setText("Tempo");
     	tvTime.setPadding(5, 0, 5, 0);
     	tvTime.setTextColor(Color.BLACK);
+    	tvTime.setTextSize(25);
     	
     	TextView tvAccX = new TextView(this);
     	tvAccX.setText("Acc eixo X");
     	tvAccX.setPadding(5, 0, 5, 0);
     	tvAccX.setTextColor(Color.BLACK);
+    	tvAccX.setTextSize(25);
     	
     	TextView tvAccY = new TextView(this);
     	tvAccY.setText("Acc eixo Y");
     	tvAccY.setPadding(5, 0, 5, 0);
     	tvAccY.setTextColor(Color.BLACK);
+    	tvAccY.setTextSize(25);
     	
     	TextView tvAccZ = new TextView(this);
     	tvAccZ.setText("Acc eixo Z");
     	tvAccZ.setPadding(5, 0, 5, 0);
     	tvAccZ.setTextColor(Color.BLACK);
+    	tvAccZ.setTextSize(25);
     	
     	TextView tvDistancia = new TextView(this);
-    	tvDistancia.setText("Distancia");
+    	tvDistancia.setText("Velocidade");
     	tvDistancia.setPadding(5, 0, 5, 0);
     	tvDistancia.setTextColor(Color.BLACK);
+    	tvDistancia.setTextSize(25);
     	
     	TextView tvLoc = new TextView(this);
     	tvLoc.setText("Localizacao");
     	tvLoc.setPadding(5, 0, 5, 0);
     	tvLoc.setTextColor(Color.BLACK);
+    	tvLoc.setTextSize(25);
     	
     	cabecalho.addView(tvTime);
     	cabecalho.addView(tvAccX);
@@ -176,6 +187,7 @@ public class BTActivity extends Activity {
 			}
     		TextView tvTempo = new TextView(this);
     		tvTempo.setText(tSegundos);
+    		tvTempo.setTextSize(25);
     		tvTempo.setPadding(5, 0, 5,0);
     		tvTempo.setTextColor(Color.BLACK);
     		linha.addView(tvTempo);
@@ -184,6 +196,7 @@ public class BTActivity extends Activity {
     		TextView tvAx = new TextView(this);
     		double acx=AccelerationHandler.getInstance().getAccelerationX().get(tempo);
     		tvAx.setText(acx+"");
+    		tvAx.setTextSize(25);
     		tvAx.setPadding(5, 0, 5,0);
     		if(acx==maiorAcX){
     			tvAx.setTextColor(Color.RED);
@@ -198,6 +211,7 @@ public class BTActivity extends Activity {
     		TextView tvAy = new TextView(this);
     		double acy = AccelerationHandler.getInstance().getAccelerationY().get(tempo);
     		tvAy.setText(acy+"");
+    		tvAy.setTextSize(25);
     		tvAy.setPadding(5, 0, 5,0);
     		if(acy==maiorAcY){
     			tvAy.setTextColor(Color.RED);
@@ -211,6 +225,7 @@ public class BTActivity extends Activity {
     		TextView tvAz = new TextView(this);
     		double acz = AccelerationHandler.getInstance().getAccelerationZ().get(tempo);
     		tvAz.setText(acz+"");
+    		tvAz.setTextSize(25);
     		tvAz.setPadding(5, 0, 5,0);
     		if(acz==maiorAcZ){
     			tvAz.setTextColor(Color.RED);
@@ -224,6 +239,7 @@ public class BTActivity extends Activity {
     		TextView tvDist = new TextView(this);
     		double dist = DistanceHandler.getInstance().getDistance().get(tempo);
     		tvDist.setText(dist+"");
+    		tvDist.setTextSize(25);
     		tvDist.setPadding(5, 0, 5,0);
     		if(dist==maiorDist){
     			tvDist.setTextColor(Color.RED);
@@ -235,9 +251,11 @@ public class BTActivity extends Activity {
     		linha.addView(tvDist);
     		
     		TextView tvCoord = new TextView(this);
-    		tvCoord.setText(GPSHandler.getInstance().getCoordinates().get(tempo)+"");
+    		tvCoord.setText(GPSHandler.getInstance().getCoordinates().get(tempo));
+    		tvCoord.setTextSize(25);
     		tvCoord.setPadding(5, 0, 5,0);
     		tvCoord.setTextColor(Color.BLACK);
+    		tvCoord.setOnClickListener(new CoordOnClickListener(GPSHandler.getInstance().getCoordinates().get(tempo)));
     		linha.addView(tvCoord);
     		
     		linha.setPadding(0, 3, 0, 5);
@@ -259,4 +277,18 @@ public class BTActivity extends Activity {
 		view.setImageBitmap(new GraphicGenerator().makeGraphic(AccelerationHandler.getInstance().getAccelerationX()));*/
     	
     }
+    public void goToMapPage(int lat, int lon){
+    	setContentView(R.layout.mapa);
+    	
+    	MapView map = (MapView)this.findViewById(R.id.viewMapa);
+    	map.setBuiltInZoomControls(false);
+    	Log.d("DEBUG-BT", lat+","+lon);
+    	map.getController().setCenter(new GeoPoint(lat,lon));
+    	map.getController().setZoom(21);
+    }
+	@Override
+	protected boolean isRouteDisplayed() {
+		// TODO Auto-generated method stub
+		return false;
+	}
 }
