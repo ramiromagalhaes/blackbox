@@ -1,23 +1,29 @@
 #include <SoftwareSerial.h>
+#include <math.h>
 
-#define X_AXIS 1 //identificador do eixo X do acelerometro
-#define Y_AXIS 2 //identificador do eixo Y do acelerometro
-#define Z_AXIS 3 //identificador do eixo Z do acelerometro
+//identificadores dos eixos X, Y, Z do acelerometro
+#define X_AXIS 1
+#define Y_AXIS 2
+#define Z_AXIS 3
 
-#define PIN_X 2 //pino de entrada do eixo X do acelerometro
-#define PIN_Y 3 //pino de entrada do eixo Y do acelerometro
+//Pinos de entrada de dados dos eixos X e Y do acelerometro
+#define PIN_X 2
+#define PIN_Y 3
 
-/*
-Pino analogico usado pelo sensor de velocidade (distancia).
-*/
+//Pino analogico usado pelo sensor de velocidade (distancia).
 #define PIN_VEL A0
 
+//Pinos destinados para o I/O do GPS.
 #define PIN_GPS_IN 8
 #define PIN_GPS_OUT 9
 
-#define BLINKER 13 //pino da luz que pisca pra dizer que esta tudo operacional
+//pino da luz que pisca pra dizer que esta tudo operacional
+#define BLINKER 13
 
-#define BLUETOOTH_BAUD 115200 //taxa de transmissao do dispositivo bluetooth.
+//taxa de transmissao do dispositivo bluetooth.
+#define BLUETOOTH_BAUD 115200
+
+//taxa de transmissao do GPS
 #define GPS_BAUD 4800
 
 /*
@@ -27,11 +33,22 @@ a mudanca dessa taxa a partir do dispositivo de captura.
 */
 int samplingRatePerSecond = 2;
 
-
-
 //flag para controlar como os dados serao exibidos: em modo de depuracao ou nao.
 const boolean debug = true;
 
+/*
+Altura em que o sonar fica do chao, em milimetros. E usada para calcular a
+velocidade da bicicleta.
+*/
+int sonarHeight = 0;
+
+/*
+Valor da gravidade local, usado para calcular a inclinacao da bicicleta com o uso
+do acelerometro.
+*/
+int gravity = 10;
+
+//Controlador de I/O por software usado pelo (simulador do) GPS
 SoftwareSerial gpsSerial(PIN_GPS_IN, PIN_GPS_OUT);
 
 /*
@@ -55,7 +72,7 @@ void setupCommunication() {
   Serial.begin(BLUETOOTH_BAUD);
 }
 
-
+//Inicia a porta serial do GPS.
 void setupGps() {
   gpsSerial.begin(GPS_BAUD);
 }
@@ -70,7 +87,14 @@ void setupAccelerometer() {
   pinMode(PIN_Y, INPUT);
 }
 
-void setupDistanceSensor() {
+/*
+Faz a leitura inicial da altura em que o sonar permanece no chao. Esta
+distancia sera usada posteriormente para calculo de velocidade da bicicleta.
+
+Essa distancia fica armazenada na  porta variavel 'sonarHeight'.
+*/
+void setupSonar() {
+  sonarHeight = readDistance();
 }
 
 void setupBlinker() {
@@ -83,8 +107,10 @@ Configuracao necessaria para pegarmos os dados do relogio do arduino.
 void setupTimer() {
 }
 
+
+
 /*
-Calcula a distancia em milimetros, conforme percebida pelo sensor de distancia.
+Obtem do sonar a distancia que ele mede. A saida esta em milimetros.
 
 NOTA IMPORTANTE: nao pudemos usar o sensor de distancia, portanto optamos por
 simula-lo com um potenciometro. Isso nos obrigou a fazer algumas adaptacoes no
@@ -96,7 +122,7 @@ necessario dividir pela metade o resultado de analogRead(PIN_VEL) para termos a
 distancia verdadeira. Essas unidades de distancia sao enviadas como polegadas.
 Assim, e necessario converte-las.
 */
-int getDistance() {
+int readDistance() {
   const float ajustes = 25.4/4.0;
   return analogRead(PIN_VEL) * ajustes;
 }
@@ -114,22 +140,52 @@ int convertAcceleration(int sensorData) {
   */
   const int milliGravs = ((sensorData / 10) - 500) * 8;
 
-  return milliGravs/100; //converte milligravs em m/s*s
+  return milliGravs/100; //converte milligravs em m/s²
 }
 
-//retorna a aceleracao em m/(s*s)
-int getAcceleration(int axis) {
-  int data = 0;
 
-  if (axis == X_AXIS) {
-    data = pulseIn(PIN_X, HIGH);
-  } else if (axis == Y_AXIS) {
-    data = pulseIn(PIN_Y, HIGH);
-  } //sem o pino da dimensao Z...
 
-  return convertAcceleration(data);
+/*
+Retorna a velocidade atual da bicicleta em metros/segundo, conforme descrito na
+seçao "Modulo Velocimetro" do wiki: https://github.com/ramiromagalhaes/blackbox/wiki.
+
+Na equacao abaixo, currentDistance equivale a 'd', sonarHeigh equivale a 'di', e
+totalTime equivale a 't'.
+*/
+int getSpeed() {
+  const long startTime = millis();
+  const int currentDistance = readDistance();
+  const long totalTime = millis() - startTime; //TODO: falta subtrair os atrasos do hardware informados pelo fabricante
+
+  return 2.0 * sqrt( pow(currentDistance, 2.0) - pow(sonarHeight, 2.0) ) / totalTime; //note as unidades: estamos fazendo
+                                                                                      //milimetros/milissegundos, portanto
+                                                                                      //temos o mesmo que metros/segundo
 }
 
+/*
+Retorna a aceleracao da bicicleta em m/(s*s). Esta e a aceleracao da bicicleta
+quando ela esta acelerando para frente ou para tras.
+*/
+int getAcceleration() {
+  return convertAcceleration(pulseIn(PIN_X, HIGH));
+}
+
+/*
+Retorna a inclinacao da bicicleta em graus em relacao ao chao. O angulo de inclinacao
+sera positivo se a bicicleta inclinar para a esquerda e negativo se inclinar para a
+direita. O valor zero se refere a bicicleta perfeitamente de pe.
+
+O metodo de calculo da inclinacao esta descrito na seçao "Modulo Acelerometro" no wiki
+em https://github.com/ramiromagalhaes/blackbox/wiki .
+*/
+int getInclination() {
+  const int currentAcceleration = convertAcceleration(pulseIn(PIN_Y, HIGH));
+  return acos(currentAcceleration/gravity) * 180.0 / M_PI;
+}
+
+/*
+Retorna os dados do GPS.
+*/
 char* getGps() {
   char buffer[68] = {0};
 
@@ -170,19 +226,51 @@ void sendDistance(int velocity) {
 }
 
 /*
-Envia a aceleracao em um certo eixo. Tal informacao sera enviada
+Envia a aceleracao linear da bicicleta. Tal informacao sera enviada
 com 3 bytes. Os dois primeiros se referem a aceleracao propriamente
 dita, sendo que o primeiro byte e a parte mais alta desse valor, e o
 segundo e a parte mais baixa. O terceiro byte faz referencia ao eixo
 enviado, conforme definido por X_AXIS, Y_AXIS e Z_AXIS.
 */
-void sendAcceleration(int acceleration, int axis) {
+void sendAcceleration(int acceleration) {
   if (debug) {
     Serial.println( acceleration, DEC );
   } else {
     Serial.write( highByte(acceleration) );
     Serial.write( lowByte(acceleration) );
-    Serial.write( lowByte(axis) );
+    Serial.write( lowByte(X_AXIS) );
+  }
+}
+
+
+/*
+Envia a inclinacao da bicicleta. Tal informacao sera enviada
+com 3 bytes. Os dois primeiros se referem a aceleracao propriamente
+dita, sendo que o primeiro byte e a parte mais alta desse valor, e o
+segundo e a parte mais baixa. O terceiro byte faz referencia ao eixo
+enviado, conforme definido por X_AXIS, Y_AXIS e Z_AXIS.
+*/
+void sendInclination(int angle) {
+  if (debug) {
+    Serial.println( angle, DEC );
+  } else {
+    Serial.write( highByte(angle) );
+    Serial.write( lowByte(angle) );
+    Serial.write( lowByte(Y_AXIS) );
+  }
+}
+
+/*
+Este metodo existe apenas para manter a compatibilidade com a aplicacao
+Android.
+*/
+void sendNothing() {
+  if (debug) {
+    Serial.println( 0, DEC );
+  } else {
+    Serial.write( highByte(0) );
+    Serial.write( lowByte(0) );
+    Serial.write( lowByte(0) );
   }
 }
 
@@ -227,18 +315,17 @@ void setup() {
   setupCommunication();
   setupGps();
   setupAccelerometer();
-  setupDistanceSensor();
+  setupSonar();
   setupBlinker();
   setupTimer();
 }
 
 void loop() {
   //primeiro, pegamos os dados...
-  int velocity = getDistance();
+  int velocity = getSpeed();
 
-  int accel_x = getAcceleration(X_AXIS);
-  int accel_y = getAcceleration(Y_AXIS);
-  int accel_z = getAcceleration(Z_AXIS);
+  int accel = getAcceleration();
+  int inclination = getInclination();
 
   char* gps = getGps();
 
@@ -247,9 +334,9 @@ void loop() {
   //depois, enviamos os dados...
   sendDistance(velocity);
 
-  sendAcceleration(accel_x, X_AXIS);
-  sendAcceleration(accel_y, Y_AXIS);
-  sendAcceleration(accel_z, Z_AXIS);
+  sendAcceleration(accel);
+  sendAcceleration(inclination);
+  sendNothing(); //apenas para nao quebrar a compatibilidade com a aplicaçao do Android.
 
   sendGps(gps);
 
